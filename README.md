@@ -1,0 +1,2 @@
+# flask_usdjpy_transformers_app
+Flaskとgunicornを使用して、transformersによりUSDJPYの1時間足の当落を予測するアプリ
