@@ -1,0 +1,4 @@
+yfinance
+scikit_learn
+flask
+gunicorn

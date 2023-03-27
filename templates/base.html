@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USDJPY_H1_predict app</title>
+
+</head>
+
+<body>
+    <h1>USDJPY1時間足予測(Transformers)アプリ</h1>
+        <h2>概要及び注意事項</h2>
+            <p>当アプリでは、USDJPYの1時間足を直近のデータ量に基づき陽線か、陰線かを過去データ(yfinance)によりTransformersを使用して予測します。</p>
+            <p>ただし本結果により投資にいかなる損失が生じても、当アプリでは責任を取りません。</p>
+            </p>あくまで参考程度にご利用ください。</p>
+            <p>なお時刻はUTC(日本時間マイナス9時間)の表示となります。</p>
+    <table>
+    <tr>
+    <td><form method="post" action="{{ url_for('result') }}">
+        <input type="submit" value="予測開始">
+    </form></td>
+    <td><form method="post" action="{{ url_for('reset') }}">
+        <input type="submit" value="リセット">
+    </form></td>
+    </tr>
+    </table>
+    {% block content %}
+    {% endblock %}
+</body>
+
+</html>
