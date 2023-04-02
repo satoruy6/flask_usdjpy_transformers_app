@@ -12,18 +12,14 @@ def result():
     if request.method=='POST':
         import time
         t1 = time.time()
-        import pandas as pd
-        from sklearn.preprocessing import StandardScaler
-        from sklearn.model_selection import train_test_split
-        from sklearn.linear_model import LogisticRegression
-        from sklearn.pipeline import make_pipeline
-
         import numpy as np
         import csv
         import math
         import pandas as pd
-        from pandas import Series, DataFrame
         import yfinance as yf
+        from sklearn.pipeline import Pipeline 
+        from sklearn.preprocessing import StandardScaler 
+        from sklearn.linear_model import LogisticRegression
 
         # 外為データ取得
         tks  = 'USDJPY=X'
@@ -34,7 +30,7 @@ def result():
 
         #最後の日時を取り出す。
         lastdatetime = data.index[-1]
-        #print(lastdatetime)
+
         #Close価格のみを取り出す。
         data_close = data['Close']
 
@@ -60,67 +56,51 @@ def result():
                 answers.append(1)
             else:
                 answers.append(0)
-        #print(successive_data)
-        #print(type(successive_data))
-        #print(len(successive_data), "行", len(successive_data[0]), "列")
+        # print (successive_data)
         # print (answers)
 
-        df_successive_data = pd.DataFrame(successive_data)
-        df_successive_data = df_successive_data.astype(float)
-        df_successive_data.columns=['x__0','x__1','x__2','x__3']
-        df_answers = pd.DataFrame(answers)
-        df_answers.columns=['y']
-        df_answers = df_answers['y'].astype(int)
+        # データ数
+        n = len(successive_data)
+        # print (n)
+        m = len(answers)
+        # print (m)
 
-        df = pd.concat([df_successive_data, df_answers], axis=1)
-        n = len(df)
-        #print(df)
-        #dataset = df
-        #dataset.to_csv('dataset.csv')
+        # pipeline(transformers)モデル
+        clf = Pipeline([ ('scaler', StandardScaler()), ('clf', LogisticRegression())])
+        # サポートベクターマシーンによる訓練 （データの75%を訓練に使用）
+        clf.fit(successive_data[:int(n*750/1000)], answers[:int(n*750/1000)])
 
+        # テスト用データ
+        # 正解
+        expected = answers[int(-n*250/1000):]
+        # 予測
+        predicted = clf.predict(successive_data[int(-n*250/1000):])
 
-        # データの読み込み
-        #df = pd.read_csv('dataset.csv')
-
-        # 目的変数を定義
-        y = df['y']
-
-        # 説明変数を定義
-        X = df.drop('y', axis=1)
-
-        # 学習データとテストデータに分割
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
-
-        # パイプラインを作成
-        pipe = make_pipeline(StandardScaler(), LogisticRegression())
-
-        # パイプラインを用いてモデルを学習
-        pipe.fit(X_train, y_train)
-
-        #訓練済みのパイプライン（モデル）を保存する。
-        #joblib.dump(pipe, 'pipe.pkl')
-
-        # テストデータでモデルを評価
-        score = pipe.score(X_test, y_test)
-        score_round = round(score*100, 2)
-
-        #最新のデータを加える
-        successive_data.append([modified_data[count_m-4], modified_data[count_m-3], modified_data[count_m-2], modified_data[count_m-1]])
-        df_successive_data = pd.DataFrame(successive_data)
-        df_successive_data.columns=['x__0','x__1','x__2','x__3']
-        data_latest = df_successive_data
-
-        #予測をする
-        y_pred = pipe.predict(data_latest)
-        #print(y_pred[-10:])
-
-        # 結果を表示
-        accuracy=f'正解率：{score_round}%'
         predict_datetime=f'{lastdatetime}の次の1時間足の予測'
-        if y_pred[-1:] >= 0.5:
-            predicted_result='陽線でしょう'
+        # 末尾の10個を比較
+        #print ('正解:' + str(expected[-10:]))
+        #print ('予測:' + str(list(predicted[-10:])))
+
+        # 正解率の計算
+        correct = 0.0
+        wrong = 0.0
+        for i in range(int(n*250/1000)):
+            if expected[i] == predicted[i]:
+                correct += 1
+            else:
+                wrong += 1
+                
+        #print('正解数： ' + str(int(correct)))
+        #print('不正解数： ' + str(int(wrong)))
+
+        successive_data.append([modified_data[count_m-4], modified_data[count_m-3], modified_data[count_m-2], modified_data[count_m-1]])
+        predicted = clf.predict(successive_data[-1:])
+        #print ('次の1時間足の予測:' + str(list(predicted)) + ' 1:陽線,　0:陰線')
+        if str(list(predicted)) == str([1]):
+            predicted_result='「陽線」でしょう。'
         else:
-            predicted_result='陰線でしょう'  
+            predicted_result='「陰線」でしょう。'
+        accuracy="正解率: " + str(round(correct / (correct+wrong) * 100,  2)) + "%"   
         t2 = time.time()
         elapsed_time = t2- t1
         elapsed_time = round(elapsed_time, 2)
